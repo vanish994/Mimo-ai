@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mimoproxy/internal/narrator"
 	"mimoproxy/internal/models"
 	"mimoproxy/internal/services"
 	"mimoproxy/internal/utils"
@@ -399,6 +400,10 @@ func handleChatCompletions(c *gin.Context) {
 		utils.SendError(c, http.StatusBadRequest, "Messages array is required and cannot be empty", "invalid_request_error", nil)
 		return
 	}
+
+	// Optional D&D narrator mode. Disabled by default so existing proxy users
+	// keep the original behavior unless DND_NARRATOR_MODE=true is configured.
+	input.Messages = narrator.ApplySystemPrompt(input.Messages)
 
 	toolInstructions := utils.FormatToolsAsInstructions(input.Tools)
 

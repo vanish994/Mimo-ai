@@ -73,3 +73,17 @@ O gateway utiliza uma base **SQLite** local (`data/history.db`) para garantir qu
 ## Licença
 
 MIT
+
+
+## Modo narrador D&D 2024
+
+Este repositório pode operar como narrador separado do motor de regras. Ative no Render ou no `.env`:
+
+```env
+DND_NARRATOR_MODE=true
+DND_NARRATOR_PROMPT_FILE=prompts/dnd_narrator.md
+```
+
+Quando ativo, o proxy injeta `prompts/dnd_narrator.md` como a primeira mensagem `system`. O cliente ainda precisa enviar `<FATOS_RESOLVIDOS>...</FATOS_RESOLVIDOS>` na mensagem do turno. O proxy não calcula regras; ele apenas encaminha o contexto ao Mimo e transforma a resposta em narrativa.
+
+Para conservar o comportamento genérico do proxy, deixe `DND_NARRATOR_MODE=false` ou ausente.

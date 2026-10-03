@@ -35,6 +35,8 @@ RUN mkdir -p /app/data && chmod 777 /app/data
 COPY --from=builder /app/mimoproxy .
 # Copy templates for the dashboard
 COPY --from=builder /app/templates ./templates
+# Optional D&D narrator policy
+COPY --from=builder /app/prompts ./prompts
 # Copy .env.example as template if needed, though we expect .env to be mounted
 COPY .env.example .env
 

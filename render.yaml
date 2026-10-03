@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: dnd-mimo-narrator
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: API_KEY
+        generateValue: true
+      - key: DND_NARRATOR_MODE
+        value: "true"
+      - key: DND_NARRATOR_PROMPT_FILE
+        value: "prompts/dnd_narrator.md"
+      - key: SERVICE_TOKEN
+        sync: false
+      - key: USER_ID
+        sync: false
+      - key: XIAOMI_CHATBOT_PH
+        sync: false
