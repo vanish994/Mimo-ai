@@ -793,6 +793,13 @@ func handleChatCompletions(c *gin.Context) {
 		}
 	}
 
+	normalizedBody, normalizeErr := normalizeMiMoResponseBody(bodyReader)
+	if normalizeErr != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": normalizeErr.Error()})
+		return
+	}
+	bodyReader = normalizedBody
+
 	if input.Stream {
 		c.Header("Content-Type", "text/event-stream")
 		c.Header("Cache-Control", "no-cache")
@@ -946,7 +953,11 @@ func processNonStream(c *gin.Context, body io.Reader, completionID, model string
 	}
 
 	cleanText, toolCalls := utils.ParseToolCalls(fullText.String())
-	
+	if strings.TrimSpace(cleanText) == "" && len(toolCalls) == 0 {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "MiMo returned an empty completion"})
+		return
+	}
+
 	finishReason := "stop"
 	if len(toolCalls) > 0 {
 		finishReason = "tool_calls"
@@ -1059,18 +1070,32 @@ func processEvent(c *gin.Context, eventType, dataStr, completionID, model string
 		return
 	}
 
-	if eventType != "message" {
+	var content string
+	if eventType == "message" || eventType == "" {
+		var message struct {
+			Content string `json:"content"`
+		}
+		if err := json.Unmarshal([]byte(dataStr), &message); err == nil {
+			content = message.Content
+		}
+	}
+	if content == "" && eventType == "" {
+		var chunk struct {
+			Choices []struct {
+				Delta struct {
+					Content string `json:"content"`
+				} `json:"delta"`
+			} `json:"choices"`
+		}
+		if err := json.Unmarshal([]byte(dataStr), &chunk); err == nil && len(chunk.Choices) > 0 {
+			content = chunk.Choices[0].Delta.Content
+		}
+	}
+	if content == "" {
 		return
 	}
 
-	var d struct {
-		Content string `json:"content"`
-	}
-	if err := json.Unmarshal([]byte(dataStr), &d); err != nil {
-		return
-	}
-
-	content := strings.ReplaceAll(d.Content, "\x00", "")
+	content = strings.ReplaceAll(content, "\x00", "")
 	remaining := content
 
 	for len(remaining) > 0 {
